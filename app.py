@@ -20,4 +20,4 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 if __name__ == "__main__":
-    app.run(host="192.168.0.111", port=5000, debug=True)
+    app.run(host="192.168.0.101", port=5000, debug=True)

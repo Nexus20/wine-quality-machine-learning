@@ -1,12 +1,8 @@
+import os
 import joblib
-import lime
-import lime.lime_tabular
-import numpy as np
 import pandas as pd
 from azure.storage.blob import BlobServiceClient
 from flask import Blueprint, request, jsonify
-import os
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -22,7 +18,6 @@ def train_model():
     if not dataset_uri:
         return jsonify({"error": "DatasetUri is required"}), 400
 
-    # Скачать датасет с Azure Blob Storage
     local_file_name = download_dataset(dataset_uri)
 
     wine_dataset = pd.read_csv('datasets/' + local_file_name)
@@ -71,10 +66,8 @@ def download_dataset(dataset_uri):
     blob_service_client = BlobServiceClient.from_connection_string("DefaultEndpointsProtocol=https;AccountName=winequality;AccountKey=ihZJaUneiP1vQQunIXYGrQ1jToyKeewawaAg2OVVtJgABZ/ne1IWTYKAcMKX5EK/9Vl2TWJy9Wa4+AStMk3VSg==;EndpointSuffix=core.windows.net")
     container_name, blob_name = parse_container_and_blob_name(dataset_uri)
 
-    # Получить ссылку на объект в контейнере
     blob_client = blob_service_client.get_blob_client(container_name, blob_name)
 
-    # Скачать файл в локальную папку
     local_file_name = os.path.join("datasets", os.path.basename(blob_name))
     os.makedirs(os.path.dirname(local_file_name), exist_ok=True)
 
@@ -87,7 +80,6 @@ def download_dataset(dataset_uri):
 
 
 def parse_container_and_blob_name(dataset_uri):
-    # Вспомогательная функция для получения имени контейнера и объекта из URI
     parts = dataset_uri.split("/")
     container_name = parts[3]
     blob_name = "/".join(parts[4:])
@@ -95,22 +87,18 @@ def parse_container_and_blob_name(dataset_uri):
 
 
 def upload_trained_model(model_file_path):
-    # Получить BlobServiceClient с помощью строки подключения
     blob_service_client = BlobServiceClient.from_connection_string("DefaultEndpointsProtocol=https;AccountName=winequality;AccountKey=ihZJaUneiP1vQQunIXYGrQ1jToyKeewawaAg2OVVtJgABZ/ne1IWTYKAcMKX5EK/9Vl2TWJy9Wa4+AStMk3VSg==;EndpointSuffix=core.windows.net")
 
-    # Создать контейнер "trained_models", если он не существует
     container_name = "trainedmodels"
     container_client = blob_service_client.get_container_client(container_name)
     if not container_client.exists():
         container_client.create_container(public_access='blob')
 
-    # Загрузить модель в контейнер
     blob_name = os.path.basename(model_file_path)
     blob_client = container_client.get_blob_client(blob_name)
 
     with open(model_file_path, "rb") as file:
         blob_client.upload_blob(file)
 
-    # Получить ссылку на объект
     model_url = blob_client.url
     return model_url
